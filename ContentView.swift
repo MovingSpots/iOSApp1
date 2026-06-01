@@ -7,38 +7,68 @@
 
 import SwiftUI
 
-//  Main screen of the app.
-//  It shows all saved Tim Hortons orders.
 struct ContentView: View {
-    @StateObject var store = OrderStore()
+    @State private var searchText = ""
+    @State private var selectedCategory = "All"
+    
+    @StateObject var cart = CartManager()
+    
+    let coffees = loadCoffeeData()
+    let categories = ["All", "Hot", "Cold"]
+    
+    var filteredCoffees: [Coffee] {
+        coffees.filter { coffee in
+            (selectedCategory == "All" || coffee.category == selectedCategory)
+            &&
+            (searchText.isEmpty ||
+             coffee.name.lowercased().contains(searchText.lowercased()))
+        }
+    }
     
     var body: some View {
         NavigationView {
-            List {
-                ForEach(store.orders) {
-                    order in
-                    VStack(alignment: .leading) {
-                        Text(order.name).font(.headline)
-                        Text("\(order.size) \(order.drink)")
-                        if !order.notes.isEmpty {
-                            Text(order.notes).font(.caption)
-                        }
+            VStack {
+                
+                Picker("Category", selection: $selectedCategory) {
+                    ForEach(categories, id: \.self) { category in
+                        Text(category)
                     }
                 }
-            }
-            .navigationTitle("Coffee Run ☕️")
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    NavigationLink(destination: AddOrderView(store: store)) {
-                        Text("Add")
+                .pickerStyle(.segmented)
+                .padding()
+                
+                ScrollView {
+                    LazyVGrid(
+                        columns: [
+                            GridItem(.flexible()),
+                            GridItem(.flexible())
+                        ],
+                        spacing: 15
+                    ) {
+                        ForEach(filteredCoffees) { coffee in
+                            CoffeeCardView(coffee: coffee)
+                                .environmentObject(cart)
+                        }
                     }
+                    .padding()
+                }
+            }
+            .navigationTitle("Coffee Menu ☕")
+            .searchable(text: $searchText)
+            .toolbar {
+                NavigationLink {
+                    CartView()
+                        .environmentObject(cart)
+                } label: {
+                    Image(systemName: "cart")
                 }
             }
         }
     }
-  struct ContentView_Previews: PreviewProvider {
-        static var previews: some View {
-            ContentView()
-        }
+}
+
+struct ContentView_Previews: PreviewProvider {
+    static var previews: some View {
+        ContentView()
     }
 }
