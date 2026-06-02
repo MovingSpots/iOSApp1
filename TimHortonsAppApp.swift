@@ -7,6 +7,8 @@
 
 import SwiftUI
 
+//  Main app entry point.
+//  The app stats from this file.
 @main
 struct TimHortonsAppApp: App {
     var body: some Scene {
